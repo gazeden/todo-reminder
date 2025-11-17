@@ -1,21 +1,25 @@
 from fastapi import FastAPI
 
+from app.config import settings
+
 app = FastAPI()
+
 
 # Root endpoint
 @app.get("/")
 async def root():
     return {
-        "message": "Welcome to my project!",
-        "version": "0.1.0",
+        "message": f"Welcome to {settings.PROJECT_NAME}!",
+        "version": settings.VERSION,
         "docs": "/docs",
     }
+
 
 # Health check
 @app.get("/health")
 async def health_check():
     return {
         "status": "healthy",
-        "environment": "dev",
-        "version": "0.1.0",
+        "environment": settings.ENVIRONMENT,
+        "version": settings.VERSION,
     }
