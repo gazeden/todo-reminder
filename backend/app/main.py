@@ -2,7 +2,9 @@ from fastapi import FastAPI
 
 from app.config import settings
 
-app = FastAPI()
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+)
 
 
 # Root endpoint
