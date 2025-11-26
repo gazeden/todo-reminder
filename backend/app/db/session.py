@@ -3,11 +3,9 @@ from contextlib import contextmanager
 
 from sqlmodel import Session, create_engine
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql://user:password@localhost:5432/todo_reminder"
-)
+from app.config import settings
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(settings.DATABASE_URL, echo=True)
 
 
 @contextmanager
