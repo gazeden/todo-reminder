@@ -1,6 +1,5 @@
-from fastapi import FastAPI
-
 from app.config import settings
+from fastapi import FastAPI
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -19,7 +18,7 @@ async def root() -> dict[str, str]:
 
 # Health check
 @app.get("/health")
-async def health_check() -> dict [str, str]:
+async def health_check() -> dict[str, str]:
     return {
         "status": "healthy",
         "environment": settings.ENVIRONMENT,
