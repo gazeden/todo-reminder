@@ -1,4 +1,5 @@
 from typing import Generator
+from sqlmodel import Session
 
 from app.db.session import get_session
 
