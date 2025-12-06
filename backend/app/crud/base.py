@@ -1,7 +1,7 @@
 from typing import Generic, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 
 ModelType = TypeVar("ModelType")
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -57,3 +57,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.delete(obj)
             db.commit()
         return obj
+    
+    def count(self, db: Session) -> int:
+        """Count total records."""
+        statement = select(func.count()).select_from(self.model)
+        return db.exec(statement).one()
