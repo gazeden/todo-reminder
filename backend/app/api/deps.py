@@ -43,6 +43,17 @@ async def get_current_user(
     return user
 
 
+async def get_current_active_user(current_user: User = Depends(get_current_user)):
+    """
+    Dependency for getting current active user.
+    """
+    if not user_crud.is_active(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
+        )
+    return current_user
+
+
 # Common query parameters for pagination
 class CommonQueryParams:
     """
