@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 import secrets
 
+
 class Settings(BaseSettings):
     """
     Application settings loaded from environment variables.
