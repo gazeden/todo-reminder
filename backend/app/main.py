@@ -1,3 +1,4 @@
+from app.api.v1.router import api_router
 from app.config import settings
 from fastapi import FastAPI
 
@@ -24,3 +25,7 @@ async def health_check() -> dict[str, str]:
         "environment": settings.ENVIRONMENT,
         "version": settings.VERSION,
     }
+
+
+# Include API Router
+app.include_router(api_router, prefix=settings.API_V1_STR)
