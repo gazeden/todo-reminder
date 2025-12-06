@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from app.api.deps import CommonQueryParams, get_current_superuser, get_db
+from app.api.deps import CommonQueryParams, get_current_active_user, get_current_superuser, get_db
 from app.crud.user import user_crud
 from app.models.user import User
 from app.schemas.user import UserCreate, UserListResponse, UserResponse, UserUpdate
@@ -31,3 +31,13 @@ async def list_users(
         page=commons.skip // commons.limit + 1,
         page_size=commons.limit,
     )
+
+
+@router.get("/me", response_model=UserResponse)
+async def read_user_me(
+    current_user: User = Depends(get_current_active_user)
+) -> Any:
+    """
+    Get current user.
+    """
+    return current_user
