@@ -7,6 +7,7 @@ class User(SQLModel, table=True):
     """
     User database model.
     """
+
     __tablename__ = "users"
 
     id: int | None = Field(default=None, primary_key=True)
