@@ -11,6 +11,10 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def is_active(self, user: User) -> bool:
         """Check if user is active."""
         return user.is_active
+    
+    def is_superuser(self, user: User) -> bool:
+        """Check if user is a superuser."""
+        return user.is_superuser
 
 
 user_crud = CRUDUser(User)
