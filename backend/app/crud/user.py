@@ -8,5 +8,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     CRUD operations for User model.
     """
 
+    def is_active(self, user: User) -> bool:
+        """Check if user is active."""
+        return user.is_active
+
 
 user_crud = CRUDUser(User)
