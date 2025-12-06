@@ -73,10 +73,7 @@ async def read_user(
 
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def create_user(
-    user_in: UserCreate,
-    db: Session = Depends(get_db)
-) -> Any:
+async def create_user(user_in: UserCreate, db: Session = Depends(get_db)) -> Any:
     """
     Create new user.
     """
@@ -85,17 +82,62 @@ async def create_user(
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A user with this email already exists"
+            detail="A user with this email already exists",
         )
-    
+
     user = user_crud.get_by_username(db, username=user_in.username)
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A user with this username already exists"
+            detail="A user with this username already exists",
         )
-    
+
     # Create user
     user = user_crud.create(db, obj_in=user_in)
-        
+
+    return user
+
+
+@router.put("/{user_id}", response_model=UserResponse)
+async def update_user(
+    user_id: int,
+    user_in: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Update a user.
+    Users can only update their own data unless they're superusers.
+    """
+    user = user_crud.get(db, id=user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    # Check permissions
+    if user.id != current_user.id and not user_crud.is_superuser(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
+        )
+
+    # Check for email/username conflicts
+    if user_in.email and user_in.email != user.email:
+        existing_user = user_crud.get_by_email(db, email=user_in.email)
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered",
+            )
+
+    if user_in.username and user_in.username != user.username:
+        existing_user = user_crud.get_by_username(db, username=user_in.username)
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Username already taken"
+            )
+
+    # Update user
+    user = user_crud.update(db, db_obj=user, obj_in=user_in)
+
     return user
