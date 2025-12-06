@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
     ENVIRONMENT: str = "dev"
 
+    # Pagination
+    DEFAULT_PAGE_SIZE: int = 50
+    MAX_PAGE_SIZE: int = 100
+
     # Logging
     LOG_LEVEL: str = "INFO"
 
