@@ -1,14 +1,13 @@
 from typing import Generator
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from sqlmodel import Session
 
 from app.config import settings
-
 from app.core.security import decode_access_token
 from app.crud.user import user_crud
 from app.db.session import get_session
 from app.models.user import User
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlmodel import Session
 
 # OAuth2 scheme for token authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
@@ -42,3 +41,18 @@ async def get_current_user(
         )
 
     return user
+
+
+# Common query parameters for pagination
+class CommonQueryParams:
+    """
+    Common query parameters for pagination.
+    """
+
+    def __init__(
+        self,
+        skip: int = 0,
+        limit: int = 50,
+    ):
+        self.skip = skip
+        self.limit = min(limit, settings.MAX_PAGE_SIZE)
