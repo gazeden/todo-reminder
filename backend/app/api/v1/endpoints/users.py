@@ -70,3 +70,32 @@ async def read_user(
         )
 
     return user
+
+
+@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(
+    user_in: UserCreate,
+    db: Session = Depends(get_db)
+) -> Any:
+    """
+    Create new user.
+    """
+    # Check if user already exists
+    user = user_crud.get_by_email(db, email=user_in.email)
+    if user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A user with this email already exists"
+        )
+    
+    user = user_crud.get_by_username(db, username=user_in.username)
+    if user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A user with this username already exists"
+        )
+    
+    # Create user
+    user = user_crud.create(db, obj_in=user_in)
+        
+    return user
