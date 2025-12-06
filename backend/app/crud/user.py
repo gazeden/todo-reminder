@@ -16,6 +16,11 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         """Get user by email."""
         statement = select(User).where(User.email == email)
         return db.exec(statement).first()
+    
+    def get_by_username(self, db: Session, *, username: str) -> Optional[User]:
+        """Get user by username."""
+        statement = select(User).where(User.username == username)
+        return db.exec(statement).first()
 
     def authenticate(self, db: Session, *, email: str, password: str) -> Optional[User]:
         """Authenticate a user by email and password."""
