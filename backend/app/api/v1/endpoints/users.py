@@ -141,3 +141,22 @@ async def update_user(
     user = user_crud.update(db, db_obj=user, obj_in=user_in)
 
     return user
+
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_superuser),
+) -> None:
+    """
+    Delete a user. Only accessible by superusers.
+    """
+    user = user_crud.get(db, id=user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    # Delete user
+    user_crud.delete(db, id=user_id)
