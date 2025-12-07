@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     # App configuration
     APP_TITLE: str = "Todo Reminder"
     APP_ICON: str = "📝"
+    VERSION: str = "0.1.0"
+    ENVIRONMENT: str = "dev"
     DEBUG: bool = False
 
     # Pagination
