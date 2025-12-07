@@ -50,3 +50,19 @@ class APIClient:
             )
             response.raise_for_status()
             return response.json()
+
+
+# Singleton instance
+@st.cache_resource
+def get_api_client() -> APIClient:
+    """
+    Get or create API client singleton.
+    Uses Streamlit's cache_resource to maintain a single instance.
+    """
+    client = APIClient()
+
+    # If there's a token in session state, set it
+    if "access_token" in st.session_state:
+        client.set_token(st.session_state.access_token)
+
+    return client
