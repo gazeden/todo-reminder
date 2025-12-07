@@ -1,6 +1,6 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
 import secrets
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):

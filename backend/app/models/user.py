@@ -1,6 +1,7 @@
-from pydantic import EmailStr
-from sqlmodel import SQLModel, Field
 from datetime import datetime, timezone
+
+from pydantic import EmailStr
+from sqlmodel import Field, SQLModel
 
 
 class User(SQLModel, table=True):
