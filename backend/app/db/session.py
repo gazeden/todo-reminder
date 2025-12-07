@@ -1,9 +1,8 @@
 import os
 from contextlib import contextmanager
 
-from sqlmodel import Session, create_engine
-
 from app.config import settings
+from sqlmodel import Session, create_engine
 
 engine = create_engine(settings.DATABASE_URL, echo=True)
 

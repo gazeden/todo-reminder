@@ -1,12 +1,10 @@
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-import logging
-
-from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.config import settings
-
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 
 logger = logging.getLogger(__name__)
 
