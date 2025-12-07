@@ -51,6 +51,44 @@ class APIClient:
             response.raise_for_status()
             return response.json()
 
+    async def login(self, email: str, password: str) -> Dict[str, Any]:
+        """
+        Login and get access token.
+
+        Args:
+            email: User email
+            password: User password
+
+        Returns:
+            Dict with access_token and user info
+        """
+        # OAuth2 form data
+        form_data = {
+            "username": email,  # OAuth2 spec uses 'username'
+            "password": password,
+        }
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.post(
+                f"{settings.API_BASE_URL}/auth/login",
+                data=form_data,
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+            response.raise_for_status()
+            token_data = response.json()
+
+            # Set the token
+            self.set_token(token_data["access_token"])
+
+            # Get user info
+            user_response = await client.get(
+                f"{self.base_url}/users/me", headers=self._get_headers()
+            )
+            user_response.raise_for_status()
+            user_data = user_response.json()
+
+            return {"access_token": token_data["access_token"], "user": user_data}
+
 
 # Singleton instance
 @st.cache_resource
