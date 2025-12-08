@@ -13,6 +13,7 @@ st.set_page_config(
     },
 )
 
+
 # Main page content
 def main():
     """Main landing page."""
@@ -43,16 +44,44 @@ def show_login_page():
                 submit = st.form_submit_button("Login", use_container_width=True)
             with col_b:
                 register = st.form_submit_button("Register", use_container_width=True)
-            
+
             if submit:
-                ...
-            
+                handle_login(email, password)
+
             if register:
                 ...
 
 
-def show_home_page():
-    ...
+def handle_login(email: str, password: str):
+    """Handle login form submission."""
+
+    import asyncio
+
+    from services.api_client import get_api_client
+
+    if not email or not password:
+        st.error("Please enter both email and password")
+
+    try:
+        with st.spinner("Logging in..."):
+            api_client = get_api_client()
+            result = asyncio.run(api_client.login(email, password))
+
+            if result:
+                st.session_state.authenticated = True
+                st.session_state.user = result["user"]
+                st.session_state.access_token = result["access_token"]
+
+                # Set token in API client
+                api_client.set_token(result["access_token"])
+
+                st.success("Login successful!")
+                st.rerun()
+    except Exception as e:
+        st.error(f"Login failed: {str(e)}")
+
+
+def show_home_page(): ...
 
 
 if __name__ == "__main__":
