@@ -61,6 +61,7 @@ def handle_login(email: str, password: str):
 
     if not email or not password:
         st.error("Please enter both email and password")
+        return
 
     try:
         with st.spinner("Logging in..."):
