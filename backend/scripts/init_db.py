@@ -3,7 +3,13 @@ Initialize the database with test data.
 """
 
 import asyncio
+from pathlib import Path
+import sys
 from sqlmodel import Session
+
+# Append app package to python path
+app_package_path = (Path(__file__).parent.parent).resolve()
+sys.path.append(str(app_package_path))
 
 from app.db.session import engine, init_db
 from app.models.user import User
