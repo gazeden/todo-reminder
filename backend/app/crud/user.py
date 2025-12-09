@@ -1,6 +1,6 @@
 from typing import Optional
 
-from app.core.security import verify_password
+from app.core.security import get_password_hash, verify_password
 from app.crud.base import CRUDBase
 from app.models import User
 from app.schemas.user import UserCreate, UserUpdate
@@ -21,6 +21,20 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         """Get user by username."""
         statement = select(User).where(User.username == username)
         return db.exec(statement).first()
+    
+    def create(self, db: Session, *, obj_in: UserCreate) -> User:
+        """Create a new user with hashed password."""
+        db_obj = User(
+            email=obj_in.email,
+            username=obj_in.username,
+            full_name=obj_in.full_name,
+            hashed_password=get_password_hash(obj_in.password),
+            is_active=obj_in.is_active
+        )
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
 
     def authenticate(self, db: Session, *, email: str, password: str) -> Optional[User]:
         """Authenticate a user by email and password."""
