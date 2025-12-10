@@ -1,7 +1,11 @@
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING, List
 
 from pydantic import EmailStr
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
+if TYPE_CHECKING:
+    from .task import Task
 
 
 class User(SQLModel, table=True):
@@ -22,3 +26,6 @@ class User(SQLModel, table=True):
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    tasks: List["Task"] = Relationship(back_populates="owner")
