@@ -106,47 +106,38 @@ def show_home_page():
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown(
-            """
+        st.markdown("""
         <div style="padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 10px; color: white; text-align: center;">
             <h3>📊 Dashboard</h3>
             <p>View your productivity stats and upcoming tasks</p>
         </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        """, unsafe_allow_html=True)
         if st.button("Go to Dashboard", key="nav_dashboard", use_container_width=True):
             st.switch_page("pages/1_📊_Dashboard.py")
-
+    
     with col2:
-        st.markdown(
-            """
+        st.markdown("""
         <div style="padding: 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             border-radius: 10px; color: white; text-align: center;">
             <h3>📝 Tasks</h3>
             <p>Manage all your recurring and one-time tasks</p>
         </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        """, unsafe_allow_html=True)
         if st.button("Go to Tasks", key="nav_tasks", use_container_width=True):
             st.switch_page("pages/2_📝_Tasks.py")
-
+    
     with col3:
-        st.markdown(
-            """
+        st.markdown("""
         <div style="padding: 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             border-radius: 10px; color: white; text-align: center;">
             <h3>👤 Profile</h3>
             <p>Update your profile and account settings</p>
         </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        """, unsafe_allow_html=True)
         if st.button("Go to Profile", key="nav_profile", use_container_width=True):
             st.switch_page("pages/3_👤_Profile.py")
-
+    
     st.markdown("---")
 
     # Due and overdue tasks
@@ -158,13 +149,14 @@ def show_home_page():
     show_recent_activity()
 
 
-def show_quick_stats(): ...
+def show_quick_stats():
+    ...
 
+def show_urgent_tasks():
+    ...
 
-def show_urgent_tasks(): ...
-
-
-def show_recent_activity(): ...
+def show_recent_activity():
+    ...
 
 
 if __name__ == "__main__":
