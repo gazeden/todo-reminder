@@ -4,26 +4,26 @@ from typing import Optional
 
 from app.config import settings
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+from pwdlib import PasswordHash
 
 logger = logging.getLogger(__name__)
 
 # Password hasing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+password_hash = PasswordHash.recommended()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verify a plain password against a hashed password.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    return password_hash.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
     """
     Hash a password for storage.
     """
-    return pwd_context.hash(password)
+    return password_hash.hash(password)
 
 
 def create_access_token(subject: int, expires_delta: Optional[timedelta] = None) -> str:
