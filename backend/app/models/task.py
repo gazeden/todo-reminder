@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import ARRAY, JSON, String
+from sqlalchemy import ARRAY, String
 from sqlmodel import Column, Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
