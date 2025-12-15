@@ -77,7 +77,7 @@ class Task(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Relationships
-    ownwer: Optional["User"] = Relationship(back_populates="tasks")
+    owner: Optional["User"] = Relationship(back_populates="tasks")
     completions: List["TaskCompletion"] = Relationship(back_populates="task")
 
     class Config:
