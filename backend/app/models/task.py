@@ -126,7 +126,7 @@ class TaskCompletion(SQLModel, table=True):
     completed_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc), index=True
     )
-    notes: Optional[str] = Field(default=None, max_chars=500)
+    notes: Optional[str] = Field(default=None, max_length=500)
 
     # Relationships
     task: Optional[Task] = Relationship(back_populates="completions")
