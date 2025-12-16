@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/", response_model=TaskListResponse)
+@router.get("", response_model=TaskListResponse)
 async def list_tasks(
     db: Session = Depends(get_db),
     commons: CommonQueryParams = Depends(),
@@ -121,7 +121,7 @@ async def read_task(
     return task
 
 
-@router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(
     task_in: TaskCreate,
     db: Session = Depends(get_db),

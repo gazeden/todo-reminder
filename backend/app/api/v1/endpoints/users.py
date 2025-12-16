@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/", response_model=UserListResponse)
+@router.get("", response_model=UserListResponse)
 async def list_users(
     db: Session = Depends(get_db),
     commons: CommonQueryParams = Depends(),
@@ -72,7 +72,7 @@ async def read_user(
     return user
 
 
-@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(user_in: UserCreate, db: Session = Depends(get_db)) -> Any:
     """
     Create new user.
