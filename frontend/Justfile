@@ -1,0 +1,3 @@
+# Run streamlit frontend
+front *FLAGS:
+    uv run streamlit run app.py {{FLAGS}}
