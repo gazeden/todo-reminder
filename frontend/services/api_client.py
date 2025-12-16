@@ -1,9 +1,8 @@
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 import streamlit as st
-
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -50,6 +49,64 @@ class APIClient:
             )
             response.raise_for_status()
             return response.json()
+
+    async def post(
+        self,
+        endpoint: str,
+        data: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Make a POST request.
+
+        Args:
+            endpoint: API endpoint
+            data: Form data
+            json: JSON data
+
+        Returns:
+            Response JSON data
+        """
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.post(
+                f"{self.base_url}{endpoint}",
+                headers=self._get_headers(),
+                data=data,
+                json=json,
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def put(self, endpoint: str, json: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Make a PUT request.
+
+        Args:
+            endpoint: API endpoint
+            json: JSON data
+
+        Returns:
+            Response JSON data
+        """
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.put(
+                f"{self.base_url}{endpoint}", headers=self._get_headers(), json=json
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def delete(self, endpoint: str) -> None:
+        """
+        Make a DELETE request.
+
+        Args:
+            endpoint: API endpoint
+        """
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.delete(
+                f"{self.base_url}{endpoint}", headers=self._get_headers()
+            )
+            response.raise_for_status()
 
     async def login(self, email: str, password: str) -> Dict[str, Any]:
         """
