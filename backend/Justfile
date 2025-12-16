@@ -1,0 +1,23 @@
+# Run local Postgres DB
+@run-db:
+    docker run \
+        -d \
+        -e POSTGRES_USER=user \
+        -e POSTGRES_PASSWORD=password \
+        -e POSTGRES_DB=todo_reminder \
+        -p 5432:5432 \
+        -v todo_reminder_local_db:/var/lib/postgresql \
+        postgres
+
+# Run backend
+serve host="127.0.0.1" port="8000" *FLAGS:
+    @echo "Starting FastAPI backend server..."
+    uv run uvicorn app.main:app --host {{host}} --port {{port}} {{FLAGS}}
+
+# Generate alembic migration
+revision message:
+    uv run alembic revision --autogenerate -m "{{message}}"
+
+# Run alembic migrations
+migrate:
+    uv run alembic upgrade head
