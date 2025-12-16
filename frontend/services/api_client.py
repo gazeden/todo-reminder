@@ -32,7 +32,7 @@ class APIClient:
             headers["Authorization"] = f"Bearer {self.token}"
         return headers
 
-    async def get(self, endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def get(self, endpoint: str, params: Dict[str, Any] = {}) -> Dict[str, Any]:
         """
         Make a GET request.
 
