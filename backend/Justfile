@@ -14,7 +14,7 @@ serve host="127.0.0.1" port="8000" *FLAGS:
     @echo "Starting FastAPI backend server..."
     uv run uvicorn app.main:app --host {{host}} --port {{port}} {{FLAGS}}
 
-# Generate alembic migration
+# Generate alembic revision
 revision message:
     uv run alembic revision --autogenerate -m "{{message}}"
 
