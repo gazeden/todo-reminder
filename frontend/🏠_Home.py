@@ -51,7 +51,7 @@ def show_login_page():
 
             col_a, col_b = st.columns(2)
             with col_a:
-                submit = st.form_submit_button("Login", use_container_width=True)
+                submit = st.form_submit_button("Login", use_container_width=True, type="primary")
             with col_b:
                 register = st.form_submit_button("Register", use_container_width=True)
 
