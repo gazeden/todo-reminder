@@ -1,6 +1,6 @@
 services:
   backend:
-    image: ganaeld/todo-reminder-backend:0.0.1
+    image: ganaeld/todo-reminder-backend:latest
     restart: always
     container_name: backend
     ports:
@@ -9,8 +9,20 @@ services:
       DATABASE_URL: ${DATABASE_URL}
     networks:
       - backend_net
+      - app_net
     depends_on:
       - db
+  
+  frontend:
+    image: ganaeld/todo-reminder-frontend:latest
+    restart: always
+    container_name: frontend
+    ports:
+      - "8501:8501"
+    environment:
+      API_BASE_URL: https://backend:80/api/v1
+    networks:
+      - app_net
   
   db:
     image: postgres
@@ -29,6 +41,8 @@ services:
 
 networks:
   backend_net:
+    driver: bridge
+  app_net:
     driver: bridge
 
 volumes:
