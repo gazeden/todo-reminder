@@ -1,3 +1,6 @@
+### Conf ###
+set dotenv-load := true
+
 ### Modules ###
 
 # Backend module, with recipes for managing the server, DB...
@@ -36,3 +39,9 @@ git-add *ARGS="-p":
 run:
     just serve & just front
     wait
+
+build-front version online="true":
+    just frontend::build {{version}} {{online}}
+
+build-back version online="true":
+    just backend::build {{version}} {{online}}

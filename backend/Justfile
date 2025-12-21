@@ -1,3 +1,8 @@
+set dotenv-load := true
+
+# Env variables
+DOCKER_ACCOUNT := env("DOCKER_ACCOUNT", "")
+
 # Run local Postgres DB
 @run-db:
     docker run \
@@ -21,3 +26,13 @@ revision message:
 # Run alembic migrations
 migrate:
     uv run alembic upgrade head
+
+# Build Docker image
+[working-directory: ".."]
+build version online="true":
+    #!/usr/bin/env bash
+    account='{{ if online == "true" { DOCKER_ACCOUNT + "/" } else { "" } }}'
+    docker build -f backend/docker/Dockerfile -t "${account}todo-reminder-backend:{{version}}" -t "${account}todo-reminder-backend:latest" backend/
+    docker push "${account}todo-reminder-backend:{{version}}"
+    docker push "${account}todo-reminder-backend:latest"
+
