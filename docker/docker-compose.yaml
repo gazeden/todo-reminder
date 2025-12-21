@@ -20,9 +20,11 @@ services:
     ports:
       - "8501:8501"
     environment:
-      API_BASE_URL: https://backend:80/api/v1
+      API_BASE_URL: ${API_BASE_URL}
     networks:
       - app_net
+    depends_on:
+      - backend
   
   db:
     image: postgres
