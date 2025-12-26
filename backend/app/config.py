@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     SECRET_KEY: str = secrets.token_urlsafe(32)
 
+    # Kafka
+    KAFKA_TOPIC_PREFIX: str = "todo_reminder"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
