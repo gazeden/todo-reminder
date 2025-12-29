@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # Kafka
     KAFKA_TOPIC_PREFIX: str = "todo_reminder"
 
+    # Schema registry
+    SCHEMA_REGISTRY_URL: str = "localhost:8081"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
