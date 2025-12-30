@@ -42,7 +42,7 @@ class Task(SQLModel, table=True):
 
     # Interval-based recurrence (every N days/weeks/months)
     recurrence_interval: Optional[int] = Field(default=None)  # The number (N)
-    recurrent_unit: Optional[RecurrenceUnit] = Field(default=None)  # days/weeks/months
+    recurrence_unit: Optional[RecurrenceUnit] = Field(default=None)  # days/weeks/months
 
     # Specific days of week (for weekly patterns like "every Tuesday and Thursday")
     # Stores array of day numbers: 0=Monday, 1=Tuesday, ..., 6=Sunday
