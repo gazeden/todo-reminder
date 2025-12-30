@@ -33,10 +33,16 @@ class Settings(BaseSettings):
     SECRET_KEY: str = secrets.token_urlsafe(32)
 
     # Kafka
+    KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
     KAFKA_TOPIC_PREFIX: str = "todo_reminder"
+    KAFKA_ACKS: str = "all"
+    KAFKA_ENABLE_IDEMPOTENCE: bool = True
 
-    # Schema registry
+    # Schema Registry
     SCHEMA_REGISTRY_URL: str = "localhost:8081"
+    SCHEMA_REGISTRY_API_KEY: Optional[str] = None  # For Confluent Cloud
+    SCHEMA_REGISTRY_API_SECRET: Optional[str] = None  # For Confluent Cloud
+    USE_SCHEMA_REGISTRY: bool = True  # Toggle schema registry usage
 
     model_config = SettingsConfigDict(
         env_file=".env",
