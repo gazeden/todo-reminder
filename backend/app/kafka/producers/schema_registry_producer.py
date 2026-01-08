@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 from typing import Any, Dict, List, Optional, Union
@@ -5,11 +6,11 @@ from typing import Any, Dict, List, Optional, Union
 import fastavro
 from app.config import settings
 from app.kafka.schemas import TOPIC_SCHEMAS
-from confluent_kafka import SerializingProducer
+from confluent_kafka import Producer
 from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.avro import AvroSerializer
 from confluent_kafka.schema_registry.common.schema_registry_client import Schema
-from confluent_kafka.serialization import StringSerializer
+from confluent_kafka.serialization import MessageField, SerializationContext
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -21,11 +22,14 @@ class SchemaRegistryProducerService:
     """
 
     def __init__(self):
-        self.producer: Optional[SerializingProducer] = None
+        self.producer: Optional[Producer] = None
         self.schema_registry_client: Optional[SchemaRegistryClient] = None
         self.parsed_schemas: Dict[str, Any] = {}  # Cache parsed base schemas
         self.serializers: Dict[str, AvroSerializer] = {}
         self.registered_schemas: Dict[str, int] = {}  # Track registered schema IDs
+        self.resolved_schemas: Dict[
+            str, Dict
+        ] = {}  # Fully resolved schemas for serialization
         self._started = False
 
     def start(self) -> None:
@@ -56,12 +60,11 @@ class SchemaRegistryProducerService:
             # Configure producer
             producer_conf = {
                 "bootstrap.servers": settings.KAFKA_BOOTSTRAP_SERVERS,
-                "key.serializer": StringSerializer("utf_8"),
                 "acks": settings.KAFKA_ACKS,
                 "enable.idempotence": settings.KAFKA_ENABLE_IDEMPOTENCE,
             }
 
-            self.producer = SerializingProducer(producer_conf)
+            self.producer = Producer(producer_conf)
             self._started = True
 
             logger.info("Schema Registry producer started successfully")
@@ -122,8 +125,24 @@ class SchemaRegistryProducerService:
             self.registered_schemas[subject] = schema_id
 
             # Parse schema to resolve Avro dependencies then create serializer for this topic
-            parsed_schema = self._parse_schema_with_dependencies(schema_dict)
-            self._create_serializer(topic_suffix, parsed_schema)
+            # parsed_schema = self._parse_schema_with_dependencies(schema_dict)
+            # self._create_serializer(topic_suffix, parsed_schema)
+            # Resolve schema with all dependencies inlined
+            try:
+                resolved_schema = self._resolve_schema_references(schema_dict)
+                self.resolved_schemas[topic_suffix] = resolved_schema
+
+                # Create serializer with fully resolved schema
+                self._create_serializer(topic_suffix, resolved_schema)
+
+                logger.info(f"✅ Registered and created serializer for: {topic_suffix}")
+
+            except Exception as e:
+                logger.error(
+                    f"❌ Failed to resolve/serialize schema for {topic_suffix}: {e}",
+                    exc_info=True,
+                )
+                raise
 
     def _register_base_schema(self, subject: str, schema_dict: dict) -> int:
         """
@@ -252,6 +271,57 @@ class SchemaRegistryProducerService:
 
         return references
 
+    def _resolve_schema_references(self, schema_dict: dict) -> dict:
+        """
+        Resolve all schema references by inlining referenced schemas.
+
+        This creates a self-contained schema with all nested types defined inline.
+        """
+        resolved = copy.deepcopy(schema_dict)
+
+        def resolve_type(type_def):
+            """Recursively resolve type definitions."""
+            if isinstance(type_def, str):
+                # Check if it's a reference to a named schema
+                if "." in type_def and type_def in self.parsed_schemas:
+                    # Return the full schema definition
+                    return copy.deepcopy(self.parsed_schemas[type_def])
+                return type_def
+
+            elif isinstance(type_def, list):
+                # Union type - resolve each option
+                return [resolve_type(t) for t in type_def]
+
+            elif isinstance(type_def, dict):
+                # Complex type - resolve nested fields
+                if type_def.get("type") == "record":
+                    resolved_record = copy.deepcopy(type_def)
+                    if "fields" in resolved_record:
+                        for field in resolved_record["fields"]:
+                            field["type"] = resolve_type(field["type"])
+                    return resolved_record
+
+                elif type_def.get("type") == "array":
+                    resolved_array = copy.deepcopy(type_def)
+                    resolved_array["items"] = resolve_type(resolved_array["items"])
+                    return resolved_array
+
+                elif type_def.get("type") == "map":
+                    resolved_map = copy.deepcopy(type_def)
+                    resolved_map["values"] = resolve_type(resolved_map["values"])
+                    return resolved_map
+
+                return type_def
+
+            return type_def
+
+        # Resolve all field types
+        if "fields" in resolved:
+            for field in resolved["fields"]:
+                field["type"] = resolve_type(field["type"])
+
+        return resolved
+
     def _create_serializer(self, topic_suffix: str, schema_dict: dict) -> None:
         """
         Create Avro serializer for a topic.
@@ -332,11 +402,21 @@ class SchemaRegistryProducerService:
         full_topic = f"{settings.KAFKA_TOPIC_PREFIX}.{topic}"
 
         try:
+            # Manually serialize the value using AvroSerializer
+            serialization_context = SerializationContext(
+                topic=full_topic, field=MessageField.VALUE
+            )
+
+            # Serialize value to bytes
+            serialized_value = serializer(event_dict, serialization_context)
+
+            # Serialize key to bytes (simple UTF-8 encoding)
+            serialized_key = key.encode("utf-8") if key else None
+
             self.producer.produce(
                 topic=full_topic,
-                key=key,
-                value=event_dict,
-                value_serializer=serializer.serialize,
+                key=serialized_key,
+                value=serialized_value,
                 on_delivery=callback or self._delivery_report,
             )
 
