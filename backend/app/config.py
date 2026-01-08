@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     KAFKA_ACKS: str = "all"
     KAFKA_ENABLE_IDEMPOTENCE: bool = True
 
+    # SASL Authentication
+    KAFKA_SECURITY_PROTOCOL: Optional[str] = None  # PLAINTEXT, SASL_PLAINTEXT, SASL_SSL, SSL
+    KAFKA_SASL_MECHANISM: Optional[str] = None  # SCRAM-SHA-256, SCRAM-SHA-512, PLAIN, GSSAPI
+    KAFKA_SASL_USERNAME: Optional[str] = None
+    KAFKA_SASL_PASSWORD: Optional[str] = None
+
     # Schema Registry
     SCHEMA_REGISTRY_URL: str = "http://localhost:8081"
     SCHEMA_REGISTRY_API_KEY: Optional[str] = None  # For Confluent Cloud
