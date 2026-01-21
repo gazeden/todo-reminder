@@ -1,10 +1,17 @@
 import logging
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from app.api.deps import CommonQueryParams, get_current_active_user, get_db
 from app.crud.task import task_crud
-from app.models.task import TaskStatus
+from app.kafka.utils.publishers import publish_event
+from app.models.task import Task, TaskStatus
 from app.models.user import User
+from app.schemas.kafka_events import (
+    TaskCreatedEvent,
+    TaskDeletedEvent,
+    TaskUpdatedEvent,
+    TaskCompletedEvent
+)
 from app.schemas.task import (
     TaskCompleteRequest,
     TaskCompletionResponse,
@@ -130,7 +137,11 @@ async def create_task(
     """
     Create new task.
     """
+    # Create in DB
     task = task_crud.create_with_owner(db, obj_in=task_in, owner_id=current_user.id)
+
+    # Publish event to Kafka
+    publish_event("task.created", TaskCreatedEvent.from_task(task), key=str(task.id))
 
     return task
 
@@ -157,7 +168,25 @@ async def update_task(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
         )
 
+    # Update task in DB
     task = task_crud.update(db, db_obj=task, obj_in=task_in)
+
+    # Get changed fields
+    def get_changed_fields(task: Task, task_update: TaskUpdate) -> List[str]:
+        update_data = task_update.model_dump(exclude_unset=True)
+
+        changed_fields: List[str] = []
+        for field, new_value in update_data.items():
+            old_value = getattr(task, field)
+            if old_value != new_value:
+                changed_fields.append(field)
+        
+        return changed_fields
+    
+    changed_fields = get_changed_fields(task, task_in)
+
+    # Publish event to Kafka
+    publish_event("task.updated", TaskUpdatedEvent.from_task(task, changed_fields), key=str(task.id))
 
     return task
 
@@ -184,7 +213,11 @@ async def complete_task(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
         )
 
+    # Create Task Completion in DB
     task = task_crud.complete_task(db, task_id=task_id, notes=complete_data.notes)
+
+    # Publish event to Kafka
+    publish_event("task.completed", TaskCompletedEvent.from_task(task, complete_data.notes), key=str(task.id))
 
     return task
 
@@ -236,4 +269,8 @@ async def delete_task(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
         )
 
+    # Delete task from DB
     task_crud.delete(db, id=task_id)
+
+    # Publish event to Kafka
+    publish_event("task.deleted", TaskDeletedEvent.from_task(task), key=str(task.id))

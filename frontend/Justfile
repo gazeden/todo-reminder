@@ -1,3 +1,17 @@
+set dotenv-load := true
+
+# Env variables
+DOCKER_ACCOUNT := env("DOCKER_ACCOUNT", "")
+
 # Run streamlit frontend
 front *FLAGS:
     uv run streamlit run 🏠_Home.py {{FLAGS}}
+
+# Build Docker image
+[working-directory: ".."]
+build version online="true":
+    #!/usr/bin/env bash
+    account='{{ if online == "true" { DOCKER_ACCOUNT + "/" } else { "" } }}'
+    docker build -f frontend/docker/Dockerfile -t "${account}todo-reminder-frontend:{{version}}" -t "${account}todo-reminder-frontend:latest" frontend/
+    docker push "${account}todo-reminder-frontend:{{version}}"
+    docker push "${account}todo-reminder-frontend:latest"

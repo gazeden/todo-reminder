@@ -21,13 +21,13 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies using uv
-RUN uv sync --frozen --no-dev
+RUN uv sync --no-dev --frozen
 
 # Copy application source code
 COPY . .
 
-EXPOSE 80
+EXPOSE 8501
 
 # Run with uv
 ENTRYPOINT [ "uv", "run" ]
-CMD [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80" ]
+CMD [ "streamlit", "run", "🏠_Home.py" ]

@@ -1,16 +1,32 @@
 services:
   backend:
-    image: ganaeld/todo-reminder-backend:0.0.1
+    image: ganaeld/todo-reminder-backend:latest
     restart: always
     container_name: backend
     ports:
       - "80:80"
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      SCHEMA_REGISTRY_URL: ${SCHEMA_REGISTRY_URL}
     networks:
       - backend_net
+      - app_net
     depends_on:
       - db
+  
+  frontend:
+    image: ganaeld/todo-reminder-frontend:latest
+    restart: always
+    container_name: frontend
+    ports:
+      - "8501:8501"
+    environment:
+      API_BASE_URL: ${API_BASE_URL}
+    networks:
+      - app_net
+    depends_on:
+      - backend
   
   db:
     image: postgres
@@ -27,10 +43,206 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
 
+  kafka:
+    image: confluentinc/cp-kafka:8.0.3
+    container_name: kafka-kraft
+    restart: always
+    ports:
+      - "9092:9092"  # External client access
+      - "9093:9093"  # Controller communication
+    environment:
+      # ============================================
+      # CLUSTER IDENTIFICATION
+      # ============================================
+      # Unique ID for this Kafka node in the cluster
+      KAFKA_NODE_ID: 1
+
+      # Cluster ID
+      CLUSTER_ID: GBDXhQfkTU26uHBdkI-ePg
+
+      # ============================================
+      # KRAFT MODE CONFIGURATION
+      # ============================================
+      # Process roles: this node acts as both controller and broker
+      # Options: 'broker', 'controller', or 'broker,controller'
+      KAFKA_PROCESS_ROLES: "broker,controller"
+
+      # Controller quorum voters format: id@host:port
+      # In production with 3 controllers, you'd list all: 1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+
+      # ============================================
+      # LISTENER CONFIGURATION
+      # ============================================
+      # Listeners define what this broker listens on
+      # Format: NAME://host:port
+      KAFKA_LISTENERS: "INTERNAL://kafka:29092,CONTROLLER://kafka:9093,PLAINTEXT_HOST://0.0.0.0:9092"
+
+      # Advertised listeners - what clients use to connect
+      # Use 'localhost' for local development, actual hostname in production
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,PLAINTEXT_HOST://kafka:9092"
+
+      # Maps listener names to security protocols
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+
+      # Which listener the controller uses
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+
+      # Which listener inter-broker communication uses
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+
+      # ============================================
+      # STORAGE CONFIGURATION
+      # ============================================
+      # Where Kafka stores its data
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+
+      # ============================================
+      # TOPIC DEFAULTS
+      # ============================================
+      # Default replication factor for auto-created topics
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+      # Default replication for transaction state
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+      # Number of partitions for auto-created topics
+      KAFKA_NUM_PARTITIONS: 3
+
+      # ============================================
+      # PERFORMANCE TUNING
+      # ============================================
+      # Segment size - log files roll over at this size (1GB default)
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+
+      # Time before a log segment rolls over (7 days)
+      KAFKA_LOG_ROLL_MS: 604800000
+
+      # Retention time for log data (7 days)
+      KAFKA_LOG_RETENTION_MS: 604800000
+
+      # Compression type for topics
+      KAFKA_COMPRESSION_TYPE: "producer"
+    
+    networks:
+      - app_net
+      - kafka_net
+
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+      - kafka_metadata:/var/lib/kafka/metadata
+    
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+  
+  schema-registry:
+    image: confluentinc/cp-schema-registry:8.0.3
+    container_name: schema-registry
+    restart: always
+    ports:
+      - "8081:8081"
+    depends_on:
+      - kafka
+    networks:
+      - app_net
+      - kafka_net
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    
+  kafka-connect:
+    image: ganaeld/todo-reminder-kafka-connect:latest
+    container_name: kafka-connect
+    restart: always
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_started
+    ports:
+      - "8083:8083"
+    networks:
+      - kafka_net
+    environment:
+      # ============================================
+      # BASIC KAFKA CONNECTION
+      # ============================================
+      CONNECT_BOOTSTRAP_SERVERS: kafka:29092
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
+      CONNECT_REST_PORT: 8083
+
+      # ============================================
+      # CONNECT CLUSTER CONFIGURATION
+      # ============================================
+      CONNECT_GROUP_ID: kafka-connect-cluster
+
+      # Internal topics
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
+
+      CONNECT_STATUS_STORAGE_TOPIC: connect-status
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+
+      # ============================================
+      # CONVERTERS (Avro with Schema Registry)
+      # ============================================
+      # Key converter - using Avro
+      CONNECT_KEY_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "schema-registry:8081"
+      
+      # Value converter - using Avro
+      CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "schema-registry:8081"
+
+      # Internal converters (keep as JSON)
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+
+      # ============================================
+      # PLUGIN CONFIGURATION
+      # ============================================
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components,/etc/kafka-connect/custom-plugins"
+
+      # ============================================
+      # LOGGING
+      # ============================================
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      
+      # ============================================
+      # PERFORMANCE TUNING
+      # ============================================
+      CONNECT_TASK_SHUTDOWN_GRACEFUL_TIMEOUT_MS: 10000
+      CONNECT_OFFSET_FLUSH_TIMEOUT_MS: 5000
+      CONNECT_CONSUMER_MAX_POLL_RECORDS: 5000
+    
+    volumes:
+      # Mount directory for connector configurations
+      - ./connectors:/etc/kafka-connect/connectors
+      # Persistent data
+      - connect_data:/tmp/connect-data
+
 networks:
   backend_net:
+    driver: bridge
+  app_net:
+    driver: bridge
+  kafka_net:
     driver: bridge
 
 volumes:
   postgres_data:
     name: todo_reminder_db_volume
+  kafka_data:
+  kafka_metadata:
+  connect_data:
